@@ -81,3 +81,9 @@ variable "db_engine_version" {
   type        = string
   default     = "8.0"
 }
+
+variable "efs_throughput_mode" {
+  description = "EFS throughput mode: bursting (cost-effective, scales with storage) or provisioned"
+  type        = string
+  default     = "bursting"
+}
