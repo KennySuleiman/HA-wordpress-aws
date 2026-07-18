@@ -50,3 +50,7 @@ output "ec2_instance_profile_name" {
 output "backup_bucket_name" {
   value = aws_s3_bucket.backups.id
 }
+
+output "alb_dns_name" {
+  value = aws_lb.main.dns_name
+}

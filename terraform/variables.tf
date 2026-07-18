@@ -111,3 +111,9 @@ variable "asg_desired_capacity" {
   type        = number
   default     = 2
 }
+
+variable "health_check_path" {
+  description = "Path the ALB uses for target health checks"
+  type        = string
+  default     = "/health"
+}

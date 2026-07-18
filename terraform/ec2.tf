@@ -68,3 +68,33 @@ resource "aws_launch_template" "wordpress" {
     aws_s3_object.nginx_conf,
   ]
 }
+
+resource "aws_autoscaling_group" "wordpress" {
+  name                = "${var.project_name}-asg"
+  vpc_zone_identifier = aws_subnet.private[*].id
+  min_size            = var.asg_min_size
+  max_size            = var.asg_max_size
+  desired_capacity    = var.asg_desired_capacity
+
+  target_group_arns = [aws_lb_target_group.wordpress.arn]
+
+  # ASG relies on the ALB target group health check, not just EC2 status
+  # checks — an instance can be "running" but still failing WordPress health
+  health_check_type         = "ELB"
+  health_check_grace_period = 120 # give bootstrap.sh time to finish before health checks count against it
+
+  launch_template {
+    id      = aws_launch_template.wordpress.id
+    version = "$Latest"
+  }
+
+  tag {
+    key                 = "Name"
+    value               = "${var.project_name}-wordpress"
+    propagate_at_launch = true
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
