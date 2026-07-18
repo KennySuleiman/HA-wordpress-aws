@@ -51,3 +51,33 @@ variable "nat_instance_type" {
   type        = string
   default     = "t3.micro"
 }
+
+variable "db_name" {
+  description = "Initial database name"
+  type        = string
+  default     = "wordpress"
+}
+
+variable "db_username" {
+  description = "Master username for RDS"
+  type        = string
+  default     = "wpadmin"
+}
+
+variable "db_instance_class" {
+  description = "RDS instance class (db.t3.micro is free-tier eligible for the first RDS instance)"
+  type        = string
+  default     = "db.t3.micro"
+}
+
+variable "db_allocated_storage" {
+  description = "Allocated storage in GB"
+  type        = number
+  default     = 20
+}
+
+variable "db_engine_version" {
+  description = "MySQL engine version"
+  type        = string
+  default     = "8.0"
+}
