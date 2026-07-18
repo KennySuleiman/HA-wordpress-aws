@@ -87,3 +87,27 @@ variable "efs_throughput_mode" {
   type        = string
   default     = "bursting"
 }
+
+variable "ec2_instance_type" {
+  description = "Instance type for WordPress EC2 instances (t3.micro is free-tier eligible)"
+  type        = string
+  default     = "t3.micro"
+}
+
+variable "asg_min_size" {
+  description = "Minimum instances in the Auto Scaling Group"
+  type        = number
+  default     = 2
+}
+
+variable "asg_max_size" {
+  description = "Maximum instances in the Auto Scaling Group"
+  type        = number
+  default     = 4
+}
+
+variable "asg_desired_capacity" {
+  description = "Desired instances in the Auto Scaling Group"
+  type        = number
+  default     = 2
+}
