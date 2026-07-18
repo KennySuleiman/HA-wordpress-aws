@@ -42,3 +42,11 @@ output "efs_file_system_id" {
 output "efs_access_point_id" {
   value = aws_efs_access_point.wordpress.id
 }
+
+output "ec2_instance_profile_name" {
+  value = aws_iam_instance_profile.ec2.name
+}
+
+output "backup_bucket_name" {
+  value = aws_s3_bucket.backups.id
+}
