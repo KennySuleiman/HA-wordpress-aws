@@ -75,3 +75,33 @@ resource "aws_iam_instance_profile" "ec2" {
   name = "${var.project_name}-ec2-profile"
   role = aws_iam_role.ec2.name
 }
+
+# ---------- Route 53 DNS-01 permissions for Let's Encrypt (only created once domain_name is set) ----------
+data "aws_iam_policy_document" "route53_dns01" {
+  count = local.create_dns ? 1 : 0
+
+  statement {
+    effect    = "Allow"
+    actions   = ["route53:ChangeResourceRecordSets"]
+    resources = ["arn:aws:route53:::hostedzone/${data.aws_route53_zone.main[0].zone_id}"]
+  }
+
+  statement {
+    effect    = "Allow"
+    actions   = ["route53:GetChange"]
+    resources = ["arn:aws:route53:::change/*"]
+  }
+
+  statement {
+    effect    = "Allow"
+    actions   = ["route53:ListHostedZones", "route53:ListResourceRecordSets"]
+    resources = ["*"] # these two actions don't support resource-level scoping
+  }
+}
+
+resource "aws_iam_role_policy" "route53_dns01" {
+  count  = local.create_dns ? 1 : 0
+  name   = "${var.project_name}-route53-dns01"
+  role   = aws_iam_role.ec2.id
+  policy = data.aws_iam_policy_document.route53_dns01[0].json
+}

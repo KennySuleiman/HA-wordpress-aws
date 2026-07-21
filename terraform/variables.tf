@@ -117,3 +117,15 @@ variable "health_check_path" {
   type        = string
   default     = "/health"
 }
+
+variable "domain_name" {
+  description = "Registered domain name (leave empty until you've registered one — Route 53/SSL resources stay dormant)"
+  type        = string
+  default     = ""
+}
+
+variable "letsencrypt_email" {
+  description = "Email for Let's Encrypt expiry notices"
+  type        = string
+  default     = ""
+}
