@@ -19,7 +19,6 @@ systemctl enable docker
 systemctl start docker
 usermod -aG docker ec2-user
 
-# Docker Compose plugin
 mkdir -p /usr/local/lib/docker/cli-plugins
 curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 \
   -o /usr/local/lib/docker/cli-plugins/docker-compose
@@ -63,5 +62,18 @@ docker compose --env-file .env up -d
 dnf install -y amazon-cloudwatch-agent
 # Full agent config (log groups, custom metrics) is provisioned in Phase 10.
 # For now, this installs the agent so it's ready to be configured/started.
+
+# ---------- Backup script + daily cron ----------
+mkdir -p /opt/wordpress/scripts
+aws s3 cp "s3://$${BACKUP_BUCKET}/app-config/backup.sh" /opt/wordpress/scripts/backup.sh
+aws s3 cp "s3://$${BACKUP_BUCKET}/app-config/restore.sh" /opt/wordpress/scripts/restore.sh
+chmod +x /opt/wordpress/scripts/backup.sh /opt/wordpress/scripts/restore.sh
+
+cat > /etc/cron.d/wp-backup << CRONEOF
+0 3 * * * root /opt/wordpress/scripts/backup.sh $${BACKUP_BUCKET} $${DB_SECRET_ARN} $${AWS_REGION} >> /var/log/backup.log 2>&1
+CRONEOF
+chmod 644 /etc/cron.d/wp-backup
+systemctl enable crond
+systemctl start crond
 
 echo "=== Bootstrap finished: $(date) ==="

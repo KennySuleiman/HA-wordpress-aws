@@ -66,6 +66,8 @@ resource "aws_launch_template" "wordpress" {
   depends_on = [
     aws_s3_object.docker_compose,
     aws_s3_object.nginx_conf,
+    aws_s3_object.backup_script,
+    aws_s3_object.restore_script,
   ]
 }
 
@@ -97,4 +99,18 @@ resource "aws_autoscaling_group" "wordpress" {
   lifecycle {
     create_before_destroy = true
   }
+}
+
+resource "aws_s3_object" "backup_script" {
+  bucket = aws_s3_bucket.backups.id
+  key    = "app-config/backup.sh"
+  source = "${path.module}/../scripts/backup.sh"
+  etag   = filemd5("${path.module}/../scripts/backup.sh")
+}
+
+resource "aws_s3_object" "restore_script" {
+  bucket = aws_s3_bucket.backups.id
+  key    = "app-config/restore.sh"
+  source = "${path.module}/../scripts/restore.sh"
+  etag   = filemd5("${path.module}/../scripts/restore.sh")
 }

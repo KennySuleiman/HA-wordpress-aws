@@ -32,3 +32,26 @@ resource "aws_s3_bucket_public_access_block" "backups" {
 }
 
 data "aws_caller_identity" "current" {}
+
+resource "aws_s3_bucket_lifecycle_configuration" "backups" {
+  bucket = aws_s3_bucket.backups.id
+
+  rule {
+    id     = "expire-old-backups"
+    status = "Enabled"
+
+    filter {
+      prefix = "backups/"
+    }
+
+    expiration {
+      days = 30
+    }
+
+    noncurrent_version_expiration {
+      noncurrent_days = 30
+    }
+  }
+
+  # App config (docker-compose.yml, nginx.conf) never expires — separate prefix, no rule applies
+}

@@ -122,12 +122,14 @@ resource "aws_instance" "nat" {
   instance_type               = var.nat_instance_type
   subnet_id                   = aws_subnet.public[0].id
   vpc_security_group_ids      = [aws_security_group.nat.id]
+  user_data_replace_on_change = true
   source_dest_check           = false # required so it can forward traffic not addressed to itself
   associate_public_ip_address = true
 
   user_data = <<-EOF
     #!/bin/bash
     set -e
+    dnf install -y iptables
     echo 1 > /proc/sys/net/ipv4/ip_forward
     sed -i '/net.ipv4.ip_forward/d' /etc/sysctl.conf
     echo "net.ipv4.ip_forward = 1" >> /etc/sysctl.conf
