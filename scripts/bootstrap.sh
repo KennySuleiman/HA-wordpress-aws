@@ -13,7 +13,7 @@ AWS_REGION="${aws_region}"
 
 # ---------- Install Docker ----------
 dnf update -y
-dnf install -y docker amazon-efs-utils jq
+dnf install -y docker amazon-efs-utils jq cronie
 
 systemctl enable docker
 systemctl start docker
