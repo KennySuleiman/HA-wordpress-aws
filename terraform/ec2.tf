@@ -30,8 +30,18 @@ data "aws_ami" "al2023_ec2" {
 
 # ---------- Launch template ----------
 resource "aws_launch_template" "wordpress" {
-  name_prefix   = "${var.project_name}-lt-"
-  image_id      = data.aws_ami.al2023_ec2.id
+  name_prefix = "${var.project_name}-lt-"
+  image_id    = data.aws_ami.al2023_ec2.id
+
+  block_device_mappings {
+    device_name = "/dev/xvda"
+    ebs {
+      volume_size           = 30
+      volume_type           = "gp3"
+      delete_on_termination = true
+      encrypted             = true
+    }
+  }
   instance_type = var.ec2_instance_type
 
   iam_instance_profile {
