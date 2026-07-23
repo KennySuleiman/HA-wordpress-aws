@@ -33,8 +33,8 @@ DB_USER=$(echo "$SECRET_JSON" | jq -r .username)
 DB_PASSWORD=$(echo "$SECRET_JSON" | jq -r .password)
 
 echo "Dumping database..."
-docker exec wordpress sh -c \
-  "mysqldump -h '${DB_HOST}' -u '${DB_USER}' -p'${DB_PASSWORD}' '${DB_NAME}'" \
+docker run --rm --network wordpress_wp-net mysql:8.0 \
+  mysqldump -h "${DB_HOST}" -u "${DB_USER}" -p"${DB_PASSWORD}" "${DB_NAME}" \
   > "${WORK_DIR}/db-${TIMESTAMP}.sql"
 gzip "${WORK_DIR}/db-${TIMESTAMP}.sql"
 

@@ -29,8 +29,8 @@ if [ "$DB_BACKUP_KEY" != "skip" ]; then
   echo "Restoring database from ${DB_BACKUP_KEY}..."
   aws s3 cp "s3://${BACKUP_BUCKET}/${DB_BACKUP_KEY}" "${WORK_DIR}/db-restore.sql.gz"
   gunzip "${WORK_DIR}/db-restore.sql.gz"
-  docker exec -i wordpress sh -c \
-    "mysql -h '${DB_HOST}' -u '${DB_USER}' -p'${DB_PASSWORD}' '${DB_NAME}'" \
+  docker run --rm -i --network wordpress_wp-net mysql:8.0 \
+    mysql -h "${DB_HOST}" -u "${DB_USER}" -p"${DB_PASSWORD}" "${DB_NAME}" \
     < "${WORK_DIR}/db-restore.sql"
   echo "Database restore complete."
 else
