@@ -60,8 +60,8 @@ docker compose --env-file .env up -d
 
 # ---------- CloudWatch agent ----------
 dnf install -y amazon-cloudwatch-agent
-# Full agent config (log groups, custom metrics) is provisioned in Phase 10.
-# For now, this installs the agent so it's ready to be configured/started.
+aws s3 cp "s3://$${BACKUP_BUCKET}/app-config/cloudwatch-config.json" /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
+/opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
 
 # ---------- Backup script + daily cron ----------
 mkdir -p /opt/wordpress/scripts

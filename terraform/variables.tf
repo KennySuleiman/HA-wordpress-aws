@@ -129,3 +129,9 @@ variable "letsencrypt_email" {
   type        = string
   default     = ""
 }
+
+variable "alarm_email" {
+  description = "Email address to receive CloudWatch alarm notifications (leave empty to skip subscription)"
+  type        = string
+  default     = ""
+}

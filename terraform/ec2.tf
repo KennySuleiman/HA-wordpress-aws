@@ -78,6 +78,7 @@ resource "aws_launch_template" "wordpress" {
     aws_s3_object.nginx_conf,
     aws_s3_object.backup_script,
     aws_s3_object.restore_script,
+    aws_s3_object.cloudwatch_config,
   ]
 }
 
@@ -123,4 +124,11 @@ resource "aws_s3_object" "restore_script" {
   key    = "app-config/restore.sh"
   source = "${path.module}/../scripts/restore.sh"
   etag   = filemd5("${path.module}/../scripts/restore.sh")
+}
+
+resource "aws_s3_object" "cloudwatch_config" {
+  bucket = aws_s3_bucket.backups.id
+  key    = "app-config/cloudwatch-config.json"
+  source = "${path.module}/../monitoring/cloudwatch-config.json"
+  etag   = filemd5("${path.module}/../monitoring/cloudwatch-config.json")
 }
