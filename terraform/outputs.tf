@@ -58,3 +58,7 @@ output "alb_dns_name" {
 output "cloudwatch_dashboard_url" {
   value = "https://${var.aws_region}.console.aws.amazon.com/cloudwatch/home?region=${var.aws_region}#dashboards:name=${aws_cloudwatch_dashboard.main.dashboard_name}"
 }
+
+output "github_actions_role_arn" {
+  value = local.create_oidc ? aws_iam_role.github_actions[0].arn : "Set github_repo variable to enable GitHub Actions OIDC role"
+}
