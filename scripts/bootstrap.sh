@@ -67,7 +67,9 @@ aws s3 cp "s3://$${BACKUP_BUCKET}/app-config/cloudwatch-config.json" /opt/aws/am
 mkdir -p /opt/wordpress/scripts
 aws s3 cp "s3://$${BACKUP_BUCKET}/app-config/backup.sh" /opt/wordpress/scripts/backup.sh
 aws s3 cp "s3://$${BACKUP_BUCKET}/app-config/restore.sh" /opt/wordpress/scripts/restore.sh
-chmod +x /opt/wordpress/scripts/backup.sh /opt/wordpress/scripts/restore.sh
+aws s3 cp "s3://$${BACKUP_BUCKET}/app-config/deploy.sh" /opt/wordpress/scripts/deploy.sh
+aws s3 cp "s3://$${BACKUP_BUCKET}/app-config/rollback.sh" /opt/wordpress/scripts/rollback.sh
+chmod +x /opt/wordpress/scripts/backup.sh /opt/wordpress/scripts/restore.sh /opt/wordpress/scripts/deploy.sh /opt/wordpress/scripts/rollback.sh
 
 cat > /etc/cron.d/wp-backup << CRONEOF
 0 3 * * * root /opt/wordpress/scripts/backup.sh $${BACKUP_BUCKET} $${DB_SECRET_ARN} $${AWS_REGION} >> /var/log/backup.log 2>&1

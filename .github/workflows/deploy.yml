@@ -1,0 +1,115 @@
+name: Deploy WordPress Theme/Plugin Updates
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'wp-content/themes/**'
+      - 'wp-content/plugins/**'
+  workflow_dispatch: {}
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  ASG_NAME: ha-wordpress-asg
+  BACKUP_BUCKET: ha-wordpress-backups-152160818896
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Package themes and plugins
+        run: |
+          mkdir -p /tmp/package/themes /tmp/package/plugins
+          cp -r wp-content/themes/* /tmp/package/themes/ 2>/dev/null || true
+          cp -r wp-content/plugins/* /tmp/package/plugins/ 2>/dev/null || true
+          tar -czf deploy.tar.gz -C /tmp/package .
+
+      - name: Upload package to S3
+        id: upload
+        run: |
+          KEY="deployments/deploy-${{ github.sha }}.tar.gz"
+          aws s3 cp deploy.tar.gz "s3://${BACKUP_BUCKET}/${KEY}"
+          echo "key=${KEY}" >> "$GITHUB_OUTPUT"
+
+      - name: Find running WordPress instances
+        id: instances
+        run: |
+          IDS=$(aws ec2 describe-instances \
+            --filters "Name=tag:Name,Values=ha-wordpress-wordpress" "Name=instance-state-name,Values=running" \
+            --query 'Reservations[].Instances[].InstanceId' --output text)
+          if [ -z "$IDS" ]; then
+            echo "No running instances found. Aborting deploy."
+            exit 1
+          fi
+          echo "ids=$IDS" >> "$GITHUB_OUTPUT"
+          echo "Found instances: $IDS"
+
+      - name: Deploy via SSM
+        id: deploy
+        run: |
+          for INSTANCE_ID in ${{ steps.instances.outputs.ids }}; do
+            echo "Deploying to $INSTANCE_ID..."
+            CMD_ID=$(aws ssm send-command \
+              --instance-ids "$INSTANCE_ID" \
+              --document-name "AWS-RunShellScript" \
+              --parameters "commands=[\"/opt/wordpress/scripts/deploy.sh ${BACKUP_BUCKET} ${{ steps.upload.outputs.key }}\"]" \
+              --query 'Command.CommandId' --output text)
+
+            for i in $(seq 1 30); do
+              STATUS=$(aws ssm get-command-invocation \
+                --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" \
+                --query 'Status' --output text 2>/dev/null || echo "Pending")
+              if [ "$STATUS" == "Success" ]; then
+                echo "$INSTANCE_ID deployed successfully."
+                break
+              elif [ "$STATUS" == "Failed" ]; then
+                echo "$INSTANCE_ID deploy FAILED."
+                aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$INSTANCE_ID" --query 'StandardErrorContent' --output text
+                exit 1
+              fi
+              sleep 5
+            done
+          done
+
+      - name: Health check
+        id: healthcheck
+        run: |
+          ALB_DNS=$(aws elbv2 describe-load-balancers --names ha-wordpress-alb --query 'LoadBalancers[0].DNSName' --output text)
+          sleep 10
+          for i in $(seq 1 6); do
+            STATUS=$(curl -s -o /dev/null -w '%{http_code}' "http://${ALB_DNS}/health")
+            if [ "$STATUS" == "200" ]; then
+              echo "Health check passed."
+              exit 0
+            fi
+            echo "Health check attempt $i: got $STATUS, retrying..."
+            sleep 10
+          done
+          echo "Health check failed after retries."
+          exit 1
+
+      - name: Rollback on failure
+        if: failure() && steps.instances.outputs.ids != ''
+        run: |
+          echo "Deployment or health check failed — rolling back..."
+          for INSTANCE_ID in ${{ steps.instances.outputs.ids }}; do
+            aws ssm send-command \
+              --instance-ids "$INSTANCE_ID" \
+              --document-name "AWS-RunShellScript" \
+              --parameters 'commands=["/opt/wordpress/scripts/rollback.sh"]' \
+              --query 'Command.CommandId' --output text
+          done
+          echo "Rollback commands issued. Check instance logs for confirmation."

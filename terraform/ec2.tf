@@ -79,6 +79,8 @@ resource "aws_launch_template" "wordpress" {
     aws_s3_object.backup_script,
     aws_s3_object.restore_script,
     aws_s3_object.cloudwatch_config,
+    aws_s3_object.deploy_script,
+    aws_s3_object.rollback_script,
   ]
 }
 
@@ -131,4 +133,18 @@ resource "aws_s3_object" "cloudwatch_config" {
   key    = "app-config/cloudwatch-config.json"
   source = "${path.module}/../monitoring/cloudwatch-config.json"
   etag   = filemd5("${path.module}/../monitoring/cloudwatch-config.json")
+}
+
+resource "aws_s3_object" "deploy_script" {
+  bucket = aws_s3_bucket.backups.id
+  key    = "app-config/deploy.sh"
+  source = "${path.module}/../scripts/deploy.sh"
+  etag   = filemd5("${path.module}/../scripts/deploy.sh")
+}
+
+resource "aws_s3_object" "rollback_script" {
+  bucket = aws_s3_bucket.backups.id
+  key    = "app-config/rollback.sh"
+  source = "${path.module}/../scripts/rollback.sh"
+  etag   = filemd5("${path.module}/../scripts/rollback.sh")
 }
