@@ -91,6 +91,12 @@ data "aws_iam_policy_document" "github_actions_permissions" {
     actions   = ["ec2:DescribeInstances"]
     resources = ["*"] # read-only, describe actions don't support resource scoping
   }
+
+  statement {
+    effect    = "Allow"
+    actions   = ["elasticloadbalancing:DescribeLoadBalancers"]
+    resources = ["*"] # read-only, describe actions don't support resource scoping
+  }
 }
 
 resource "aws_iam_role_policy" "github_actions_permissions" {
